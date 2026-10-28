@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>巴西牛产品现货价格看板 | 牛业数据洞察</title>
+    <script src="https://unpkg.com/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #f4f7fc; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 24px 20px; color: #1a2c3e; }
+        .dashboard-container { max-width: 1600px; margin: 0 auto; }
+        .header { background: white; border-radius: 28px; padding: 20px 28px; margin-bottom: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.03); border: 1px solid #e9edf2; }
+        .header h1 { font-size: 1.9rem; font-weight: 600; background: linear-gradient(135deg, #1E4A6E, #2A6F8F); background-clip: text; -webkit-background-clip: text; color: transparent; display: inline-flex; align-items: center; gap: 12px; }
+        .header h1 i { color: #2A6F8F; font-size: 1.8rem; }
+        .sub { color: #5a6e7c; margin-top: 8px; font-size: 0.9rem; border-left: 3px solid #2A6F8F; padding-left: 14px; background: #F0F4F9; border-radius: 12px; padding: 10px 16px; margin-top: 12px; }
+        .filters-card { background: white; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #eef2f6; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
+        .filter-group label { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #4a6272; }
+        select, .multi-select-box { background: white; border: 1px solid #cfdee9; border-radius: 16px; padding: 10px 14px; font-size: 0.9rem; font-weight: 500; color: #1e2f3c; cursor: pointer; transition: 0.2s; outline: none; }
+        select:focus, .multi-select-box:focus-within { border-color: #2A6F8F; box-shadow: 0 0 0 3px rgba(42,111,143,0.2); }
+        .multi-select-box { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 280px; cursor: default; max-height: 140px; overflow-y: auto; }
+        .multi-select-box span { background: #eef2fa; padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.1s; }
+        .multi-select-box span i { font-size: 0.7rem; opacity: 0.6; }
+        .multi-select-box span:hover { background: #d4e0ec; }
+        .part-select-header { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+        .part-select-header button { background: #eef2f6; border: none; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; transition: 0.1s; }
+        .part-select-header button:hover { background: #e2e8f0; }
+        .stats-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
+        .stat-card { background: white; border-radius: 20px; padding: 16px 20px; flex: 1 1 200px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); border: 1px solid #eef2f6; }
+        .stat-card h4 { font-size: 0.85rem; font-weight: 600; color: #6c869c; margin-bottom: 8px; letter-spacing: 0.3px; }
+        .stat-price { font-size: 1.6rem; font-weight: 700; color: #1f4868; margin-bottom: 6px; }
+        .stat-change { font-size: 0.75rem; display: flex; gap: 12px; color: #6b7f8e; }
+        .change-up { color: #2c7a4d; }
+        .change-down { color: #c7362b; }
+        .na-text { color: #9aaebf; font-style: italic; }
+        .chart-card { background: white; border-radius: 28px; padding: 16px 20px 20px; margin-bottom: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #eef2f8; }
+        .chart-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            padding-left: 8px;
+            border-left: 4px solid #2A6F8F;
+            color: #1f4868;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+        #trendChart, #compareChart { width: 100%; height: 400px; }
+        .compare-controls { margin-bottom: 20px; }
+        .compare-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .global-stats-card {
+            background: #f0f4fa;
+            border-radius: 16px;
+            padding: 12px 20px;
+            flex: 1;
+            border-left: 4px solid #2A6F8F;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .global-stats-card .stat-item { font-size: 0.85rem; }
+        .global-stats-card .stat-value { font-weight: 700; font-size: 1.1rem; color: #1f4868; margin-left: 5px; }
+        .brand-group {
+            margin-bottom: 20px;
+            border: 1px solid #eef2f6;
+            border-radius: 20px;
+            padding: 12px 16px;
+            background: #fafcff;
+        }
+        .brand-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .brand-header h4 {
+            font-size: 1rem;
+            color: #2c5a74;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .brand-avg { font-size: 0.8rem; background: #eef2fa; padding: 4px 12px; border-radius: 20px; color: #2c5a74; }
+        .brand-buttons { display: flex; gap: 8px; }
+        .brand-buttons button { background: #eef2f6; border: none; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; cursor: pointer; transition: 0.1s; }
+        .brand-buttons button:hover { background: #e2e8f0; }
+        .sif-checkbox-list { display: flex; flex-wrap: wrap; gap: 16px; }
+        .sif-checkbox-list label { display: inline-flex; align-items: center; gap: 6px; background: #f0f4fa; padding: 6px 12px; border-radius: 30px; font-size: 0.8rem; cursor: pointer; transition: 0.1s; }
+        .sif-checkbox-list label:hover { background: #e2e8f0; }
+        .sif-checkbox-list input { margin-right: 4px; cursor: pointer; }
+        .table-wrapper { background: white; border-radius: 28px; padding: 8px 0 4px 0; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #eef2f6; margin-top: 20px; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; min-width: 1400px; }
+        .data-table th { background: #f8fafd; padding: 10px 6px; text-align: center; font-weight: 600; color: #2c5a74; border-bottom: 1px solid #e2e8f0; font-size: 0.7rem; letter-spacing: 0.3px; }
+        .data-table td { padding: 6px; text-align: center; border-bottom: 1px solid #f0f4f9; color: #2d3e4f; }
+        .badge-null { color: #9aaebf; font-style: italic; font-size: 0.7rem; }
+        .footer-note { margin-top: 24px; text-align: right; font-size: 0.7rem; color: #7893a7; border-top: 1px solid #e2eaf0; padding-top: 16px; }
+        @media (max-width: 780px) {
+            body { padding: 16px; }
+            .filter-group { width: 100%; }
+            .multi-select-box { width: 100%; }
+            .stat-card { flex-basis: 100%; }
+            .sif-checkbox-list { gap: 8px; }
+            .compare-header { flex-direction: column; align-items: stretch; }
+        }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; color: #1f4868; flex-direction: column; gap: 12px; }
+        .loading-spinner { width: 40px; height: 40px; border: 4px solid #eef2f6; border-top-color: #2A6F8F; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-message { color: #c7362b; background: #ffe6e5; padding: 20px; border-radius: 16px; text-align: center; margin: 50px auto; max-width: 600px; }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> 巴西牛产品现货价格看板</h1>
+        <div class="sub">
+            <i class="fas fa-calendar-alt"></i> 数据周期动态更新 &nbsp;&nbsp;|&nbsp;&nbsp;
+            <i class="fas fa-industry"></i> 涵盖品牌：JBS / MARFRIG / MINERVA / 独立厂号 &nbsp;&nbsp;|&nbsp;&nbsp;
+            <i class="fas fa-cut"></i> 价格趋势 (元/KG)
+        </div>
+    </div>
+
+    <div class="filters-card">
+        <div class="filter-group">
+            <label><i class="fas fa-tag"></i> 品牌 + 厂号</label>
+            <select id="brandSifSelect"></select>
+        </div>
+        <div class="filter-group">
+            <label><i class="fas fa-chart-simple"></i> 选择部位 (可多选)</label>
+            <div class="part-select-header">
+                <button id="selectAllPartsBtn" style="padding: 4px 12px;">全选</button>
+                <button id="clearPartsBtn" style="padding: 4px 12px;">清空</button>
+            </div>
+            <div class="multi-select-box" id="partMultiBox"></div>
+        </div>
+    </div>
+
+    <div class="stats-row" id="statsContainer"></div>
+
+    <div class="chart-card">
+        <div class="chart-title"><i class="fas fa-chart-line"></i> 价格趋势 (元/KG)</div>
+        <div id="trendChart"></div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-title">
+            <span><i class="fas fa-chart-line"></i> 价格对比：同一部位，不同厂号</span>
+        </div>
+        <div class="compare-controls">
+            <div class="compare-header">
+                <div class="filter-group" style="margin-bottom:0;">
+                    <label>选择对比部位</label>
+                    <select id="comparePartSelect" style="width: 200px;"></select>
+                </div>
+                <div id="globalStatsCard" class="global-stats-card">
+                    <div class="stat-item"><i class="fas fa-chart-line"></i> 全厂号最新均价: <span id="globalAvg" class="stat-value">—</span> 元/KG</div>
+                    <div class="stat-item"><i class="fas fa-arrow-up"></i> 最高: <span id="globalMax" class="stat-value">—</span> 元/KG <span id="globalMaxFactory" style="font-size:0.75rem;color:#5a6e7c;"></span></div>
+                    <div class="stat-item"><i class="fas fa-arrow-down"></i> 最低: <span id="globalMin" class="stat-value">—</span> 元/KG <span id="globalMinFactory" style="font-size:0.75rem;color:#5a6e7c;"></span></div>
+                </div>
+            </div>
+            <div id="compareSifGroups"></div>
+        </div>
+        <div id="compareChart"></div>
+    </div>
+
+    <div class="table-wrapper">
+        <div class="chart-title" style="margin-bottom: 16px;"><i class="fas fa-calendar-week"></i> 最新价格表 (元/KG)</div>
+        <table class="data-table" id="weeklyTable">
+            <thead id="weeklyTableHead"></thead>
+            <tbody id="weeklyTableBody"></tbody>
+        </table>
+    </div>
+    <div class="footer-note">
+        <i class="fas fa-database"></i> 数据基于现货市场报盘 | 单位：元/KG | “休市”或“/”或空表示当日无真实报盘<br>
+        周环比 = (最新价 - 最近有效价)/最近有效价 ×100% | 月涨幅 = (最新价 - 最近有效价)/最近有效价 ×100%<br>
+        周环比优先搜索7天前±4天内的有效价格，月涨幅优先搜索30天前±7天内的有效价格<br>
+        全厂号统计仅基于最新日期当天有报价的厂号
+    </div>
+</div>
+
+<script>
+    // ==================== 全局变量 ====================
+    let allData = null;
+    const partFields = ["上脑/背肩","保乐/肩胛","前胸","前腱","嫩肩肉","板腱","牛脖肉","肋条","牛前八件套","大米龙","小米龙","牛霖","去盖针扒","后四"];
+    const brandOrder = ['JBS', 'MARFRIG', 'MINERVA', '独立厂号'];
+    let uniqueBrands = [];
+    let brandSifMap = {};
+    let allBrandSifCombos = [];
+    let allCombos = [];
+    let latestDate = '';
+    
+    // 颜色池（预留足够颜色）
+    const colorPalette = [
+        '#5470c6', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', 
+        '#9a60b4', '#ea7ccc', '#6e9ef3', '#f5b041', '#5dade2', '#58d68d',
+        '#d94e5d', '#2b7a62', '#a5673f'
+    ];
+    
+    const priceCache = new Map();
+    const latestPriceCache = new Map();
+    
+    let currentBrand = '';
+    let currentSIF = '';
+    let selectedParts = ["上脑/背肩"];
+    
+    let trendChart = null;
+    let compareChart = null;
+    let brandAvgSpans = {};
+    
+    // 统一日期解析：将 "2026/1/5" 转换为 "2026-01-05" 字符串，便于排序和比较
+    function parseDate(dateStr) {
+        if (!dateStr) return null;
+        let parts = dateStr.split(/[\/\-]/);
+        if (parts.length === 3) {
+            let year = parts[0];
+            let month = parts[1].padStart(2, '0');
+            let day = parts[2].padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        return dateStr;
+    }
+    
+    // ==================== LTTB 降采样算法 (保留趋势特征) ====================
+    function lttb(data, threshold) {
+        if (threshold >= data.length || threshold <= 2) return data;
+        const dataLength = data.length;
+        const bucketSize = (dataLength - 2) / (threshold - 2);
+        const sampled = [data[0]];
+        let a = 0;
+        for (let i = 0; i < threshold - 2; i++) {
+            const avgRangeStart = Math.floor((i + 1) * bucketSize) + 1;
+            const avgRangeEnd = Math.floor((i + 2) * bucketSize) + 1;
+            const avgRangeEnd2 = avgRangeEnd < dataLength ? avgRangeEnd : dataLength;
+            let avgX = 0, avgY = 0;
+            let avgRangeLen = 0;
+            for (let j = avgRangeStart; j < avgRangeEnd2; j++) {
+                avgX += j;
+                avgY += data[j][1];
+                avgRangeLen++;
+            }
+            avgX /= avgRangeLen;
+            avgY /= avgRangeLen;
+            let rangeOffs = Math.floor(i * bucketSize) + 1;
+            const rangeTo = Math.floor((i + 1) * bucketSize) + 1;
+            const pointAX = data[a][0];
+            const pointAY = data[a][1];
+            let maxArea = -1;
+            let nextA = rangeOffs;
+            for (let j = rangeOffs; j < rangeTo; j++) {
+                const area = Math.abs((pointAX - avgX) * (data[j][1] - pointAY) - (pointAX - data[j][0]) * (avgY - pointAY)) * 0.5;
+                if (area > maxArea) {
+                    maxArea = area;
+                    nextA = j;
+                }
+            }
+            sampled.push(data[nextA]);
+            a = nextA;
+        }
+        sampled.push(data[dataLength - 1]);
+        return sampled;
+    }
+    
+    function debounce(func, delay) {
+        let timer;
+        return function(...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+    
+    // ==================== 数据解析 ====================
+    function parseCSVtoData(csvString) {
+        if (csvString.charCodeAt(0) === 0xFEFF) {
+            csvString = csvString.slice(1);
+        }
+        const lines = csvString.trim().split(/\r?\n/);
+        if (lines.length < 2) throw new Error('CSV 文件内容为空');
+        
+        let rawHeader = lines[0];
+        rawHeader = rawHeader.replace(/^\uFEFF/, '').trim();
+        
+        const standardHeaders = ["日期","品牌","SIF","上脑/背肩","保乐/肩胛","前胸","前腱","嫩肩肉","板腱","牛脖肉","肋条","牛前八件套","大米龙","小米龙","牛霖","去盖针扒","后四"];
+        
+        let headers = rawHeader.split(',').map(h => h.trim());
+        if (headers[0] !== '日期' && headers[0] !== 'Date') {
+            console.warn('检测到CSV表头异常，使用预设标准表头覆盖。原始表头:', rawHeader);
+            headers = [...standardHeaders];
+        } else {
+            if (headers.length < standardHeaders.length) {
+                console.warn('CSV表头字段不足，使用标准表头补充');
+                headers = [...standardHeaders];
+            }
+        }
+        
+        const brandMap = {
+            'ЖРСЂГЇКХ': '独立厂号',
+            'JBS': 'JBS',
+            'MARFRIG': 'MARFRIG',
+            'MINERVA': 'MINERVA'
+        };
+        
+        const records = [];
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line.trim()) continue;
+            const values = line.split(',').map(v => v.trim());
+            while (values.length < headers.length) values.push('');
+            
+            const obj = {};
+            headers.forEach((h, idx) => {
+                let val = values[idx];
+                if (val === undefined || val === '') {
+                    obj[h] = null;
+                } else if (h !== '日期' && h !== '品牌' && h !== 'SIF') {
+                    if (val === '休市' || val === '/' || val === '') obj[h] = null;
+                    else { const num = parseFloat(val); obj[h] = isNaN(num) ? null : num; }
+                } else {
+                    obj[h] = val;
+                }
+            });
+            
+            if (obj.品牌 && brandMap[obj.品牌]) {
+                obj.品牌 = brandMap[obj.品牌];
+            }
+            
+            if (obj.日期 && obj.品牌) {
+                obj.日期标准 = parseDate(obj.日期);
+                records.push(obj);
+            }
+        }
+        console.log(`解析完成，共 ${records.length} 条有效记录`);
+        const brands = new Set(records.map(r => r.品牌));
+        console.log('解析到的品牌:', Array.from(brands));
+        return records;
+    }
+    
+    function buildDataStructures() {
+        uniqueBrands = brandOrder.filter(b => allData.some(d => d.品牌 === b));
+        brandSifMap = {};
+        for (let brand of uniqueBrands) {
+            const seen = new Set();
+            const order = [];
+            for (let record of allData) {
+                if (record.品牌 === brand && !seen.has(record.SIF)) {
+                    seen.add(record.SIF);
+                    order.push(record.SIF);
+                }
+            }
+            brandSifMap[brand] = order;
+        }
+        allBrandSifCombos = [];
+        for (let brand of uniqueBrands) {
+            for (let sif of brandSifMap[brand]) {
+                allBrandSifCombos.push({ brand, sif, display: `${brand} ${sif}` });
+            }
+        }
+        allCombos = [];
+        for (let brand of uniqueBrands) {
+            for (let sif of brandSifMap[brand]) {
+                allCombos.push({ brand, sif });
+            }
+        }
+        const allDates = [...new Set(allData.map(d => d.日期标准))].sort();
+        latestDate = allDates[allDates.length - 1];
+        priceCache.clear();
+        latestPriceCache.clear();
+        if (allBrandSifCombos.length > 0) {
+            currentBrand = allBrandSifCombos[0].brand;
+            currentSIF = allBrandSifCombos[0].sif;
+        }
+        selectedParts = ["上脑/背肩"];
+        console.log('数据结构构建完成，品牌:', uniqueBrands, '最新日期:', latestDate);
+    }
+    
+    // ==================== 核心业务 ====================
+    function getCachedPriceSeries(brand, sif, part) {
+        const key = `${brand}|${sif}|${part}`;
+        if (priceCache.has(key)) return priceCache.get(key);
+        let filtered = allData.filter(r => r.品牌 === brand && r.SIF === sif);
+        filtered.sort((a,b) => a.日期标准.localeCompare(b.日期标准));
+        const series = filtered.map(r => ({ date: r.日期标准, price: r[part] }));
+        priceCache.set(key, series);
+        return series;
+    }
+    
+    function getCachedLatestPrice(brand, sif, part) {
+        const key = `${brand}|${sif}|${part}`;
+        if (latestPriceCache.has(key)) return latestPriceCache.get(key);
+        const series = getCachedPriceSeries(brand, sif, part);
+        let latest = null;
+        for (let i = series.length-1; i >= 0; i--) {
+            if (series[i].price !== null) { latest = series[i].price; break; }
+        }
+        latestPriceCache.set(key, latest);
+        return latest;
+    }
+    
+    function getPriceSeries(part, brand, sif) {
+        return getCachedPriceSeries(brand, sif, part);
+    }
+    
+    function getNearestPrice(series, targetDate, maxOffsetDays = 7) {
+        const targetTime = new Date(targetDate).getTime();
+        for (let offset = 0; offset <= maxOffsetDays; offset++) {
+            const forwardDate = new Date(targetTime - offset * 86400000);
+            const backDate = new Date(targetTime + offset * 86400000);
+            if (offset !== 0) {
+                const forwardItem = series.find(item => {
+                    const itemTime = new Date(item.date).getTime();
+                    return Math.abs(itemTime - forwardDate.getTime()) <= 86400000;
+                });
+                if (forwardItem && forwardItem.price !== null) return forwardItem.price;
+            }
+            const backItem = series.find(item => {
+                const itemTime = new Date(item.date).getTime();
+                return Math.abs(itemTime - backDate.getTime()) <= 86400000;
+            });
+            if (backItem && backItem.price !== null) return backItem.price;
+            if (offset === 0) {
+                const exactItem = series.find(item => {
+                    const itemTime = new Date(item.date).getTime();
+                    return Math.abs(itemTime - targetTime) <= 86400000;
+                });
+                if (exactItem && exactItem.price !== null) return exactItem.price;
+            }
+        }
+        return null;
+    }
+    
+    function getStatsForPart(part, brand, sif) {
+        const series = getPriceSeries(part, brand, sif);
+        if (series.length === 0) return { latest: null, weekChange: null, monthChange: null };
+        const latestPrice = getCachedLatestPrice(brand, sif, part);
+        if (latestPrice === null) return { latest: null, weekChange: null, monthChange: null };
+        let latestDateStr = null;
+        for (let i = series.length-1; i >= 0; i--) {
+            if (series[i].price !== null) { latestDateStr = series[i].date; break; }
+        }
+        const latestDateObj = new Date(latestDateStr);
+        const targetWeek = new Date(latestDateObj);
+        targetWeek.setDate(targetWeek.getDate() - 7);
+        const weekPrice = getNearestPrice(series, targetWeek.toISOString().slice(0,10), 4);
+        const weekChange = weekPrice ? ((latestPrice - weekPrice)/weekPrice * 100) : null;
+        const targetMonth = new Date(latestDateObj);
+        targetMonth.setDate(targetMonth.getDate() - 30);
+        const monthPrice = getNearestPrice(series, targetMonth.toISOString().slice(0,10), 7);
+        const monthChange = monthPrice ? ((latestPrice - monthPrice)/monthPrice * 100) : null;
+        return { latest: latestPrice, weekChange, monthChange };
+    }
+    
+    function renderStats() {
+        const container = document.getElementById('statsContainer');
+        container.innerHTML = '';
+        for (let part of selectedParts) {
+            const stats = getStatsForPart(part, currentBrand, currentSIF);
+            const card = document.createElement('div'); card.className = 'stat-card';
+            let changeHtml = '';
+            if (stats.weekChange !== null) changeHtml += `<span class="${stats.weekChange >=0 ? 'change-up' : 'change-down'}">周环比 ${stats.weekChange.toFixed(1)}%</span>`;
+            else changeHtml += '<span class="na-text">周环比 N/A</span>';
+            if (stats.monthChange !== null) changeHtml += `<span class="${stats.monthChange >=0 ? 'change-up' : 'change-down'}">月涨幅 ${stats.monthChange.toFixed(1)}%</span>`;
+            else changeHtml += '<span class="na-text">月涨幅 N/A</span>';
+            card.innerHTML = `<h4>${part}</h4><div class="stat-price">${stats.latest !== null ? stats.latest.toFixed(1) : '—'} <span style="font-size:0.8rem;">元/KG</span></div><div class="stat-change">${changeHtml}</div>`;
+            container.appendChild(card);
+        }
+        if (selectedParts.length === 0) container.innerHTML = '<div class="stat-card" style="width:100%; text-align:center;">请至少选择一个部位</div>';
+    }
+    
+    function updateTrendChart() {
+        const filtered = allData.filter(row => row.品牌 === currentBrand && row.SIF === currentSIF);
+        if (!filtered.length) return;
+        const sorted = [...filtered].sort((a,b) => a.日期标准.localeCompare(b.日期标准));
+        const dateLabels = sorted.map(d => {
+            const parts = d.日期标准.split('-');
+            return `${parts[1]}-${parts[2]}`;
+        });
+        
+        const finalSeries = [];
+        for (let idx = 0; idx < selectedParts.length; idx++) {
+            const part = selectedParts[idx];
+            const pricesRaw = sorted.map(d => d[part] !== null ? d[part] : null);
+            const validIndices = [];
+            for (let i = 0; i < pricesRaw.length; i++) {
+                if (pricesRaw[i] !== null) validIndices.push(i);
+            }
+            if (validIndices.length === 0) continue;
+            let keepIndices = validIndices;
+            if (validIndices.length > 50) {
+                const points = validIndices.map(i => [i, pricesRaw[i]]);
+                const sampledPoints = lttb(points, 50);
+                keepIndices = sampledPoints.map(p => p[0]);
+            }
+            const sampledPrices = new Array(pricesRaw.length).fill(null);
+            for (let i of keepIndices) {
+                sampledPrices[i] = pricesRaw[i];
+            }
+            // 对“牛前八件套”加粗线条
+            const lineWidth = (part === "牛前八件套") ? 3 : 1.5;
+            finalSeries.push({
+                name: part,
+                type: 'line',
+                data: sampledPrices,
+                connectNulls: false,
+                symbol: 'none',
+                lineStyle: { width: lineWidth, opacity: 0.85, color: colorPalette[idx % colorPalette.length] },
+                emphasis: { scale: false }
+            });
+        }
+        
+        const chartDom = document.getElementById('trendChart');
+        if (chartDom) {
+            if (!trendChart) trendChart = echarts.init(chartDom);
+            trendChart.setOption({
+                animation: false,
+                color: colorPalette,
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'line', snap: false, lineStyle: { type: 'dashed', width: 1 } },
+                    transitionDuration: 0,
+                    valueFormatter: v => v !== null ? v.toFixed(1) + ' 元/KG' : '休市'
+                },
+                legend: { data: finalSeries.map(s => s.name), top: 0, left: 'center', itemWidth: 20, itemHeight: 10, type: 'scroll' },
+                grid: { left: '5%', right: '5%', top: '12%', bottom: '5%', containLabel: true },
+                xAxis: { type: 'category', data: dateLabels, name: '日期 (月-日)', axisLabel: { rotate: 30, interval: 'auto', fontSize: 10 } },
+                yAxis: { type: 'value', name: '价格 (元/KG)', min: 'dataMin', axisLabel: { fontSize: 10 } },
+                series: finalSeries
+            }, true);
+        }
+    }
+    
+    function getBrandLatestPrices(part, brand) {
+        const sifs = brandSifMap[brand] || [];
+        const prices = [];
+        for (let sif of sifs) {
+            const latest = getCachedLatestPrice(brand, sif, part);
+            if (latest !== null) prices.push(latest);
+        }
+        return prices;
+    }
+    
+    function updateBrandAvgDisplays(part) {
+        for (let brand in brandAvgSpans) {
+            const prices = getBrandLatestPrices(part, brand);
+            const avg = prices.length ? prices.reduce((a,b) => a+b,0)/prices.length : null;
+            if (brandAvgSpans[brand]) {
+                brandAvgSpans[brand].innerText = avg !== null ? `品牌均价: ${avg.toFixed(1)} 元/KG` : '品牌均价: —';
+            }
+        }
+    }
+    
+    function updateGlobalStats(part) {
+        const latestDateStr = latestDate;
+        const pricesWithFactory = [];
+        for (let combo of allCombos) {
+            const record = allData.find(r => r.品牌 === combo.brand && r.SIF === combo.sif && r.日期标准 === latestDateStr);
+            const price = record ? record[part] : null;
+            if (price !== null && price !== undefined) {
+                pricesWithFactory.push({ price, factory: `${combo.brand} ${combo.sif}` });
+            }
+        }
+        if (pricesWithFactory.length === 0) {
+            document.getElementById('globalAvg').innerText = '—';
+            document.getElementById('globalMax').innerText = '—';
+            document.getElementById('globalMin').innerText = '—';
+            document.getElementById('globalMaxFactory').innerText = '';
+            document.getElementById('globalMinFactory').innerText = '';
+            return;
+        }
+        const prices = pricesWithFactory.map(p => p.price);
+        const avg = prices.reduce((a,b) => a+b,0) / prices.length;
+        const maxPrice = Math.max(...prices);
+        const minPrice = Math.min(...prices);
+        const maxItems = pricesWithFactory.filter(p => p.price === maxPrice);
+        const minItems = pricesWithFactory.filter(p => p.price === minPrice);
+        const maxFactoryStr = maxItems.map(i => i.factory).join(', ');
+        const minFactoryStr = minItems.map(i => i.factory).join(', ');
+        document.getElementById('globalAvg').innerText = avg.toFixed(1);
+        document.getElementById('globalMax').innerText = maxPrice.toFixed(1);
+        document.getElementById('globalMin').innerText = minPrice.toFixed(1);
+        document.getElementById('globalMaxFactory').innerHTML = ` (${maxFactoryStr})`;
+        document.getElementById('globalMinFactory').innerHTML = ` (${minFactoryStr})`;
+    }
+    
+    function updateCompareChart() {
+        const part = document.getElementById('comparePartSelect').value;
+        const checkboxes = document.querySelectorAll('#compareSifGroups input:checked');
+        const selectedCombos = Array.from(checkboxes).map(cb => {
+            const [brand, sif] = cb.value.split('|');
+            return { brand, sif };
+        });
+        if (selectedCombos.length === 0) { if (compareChart) compareChart.clear(); return; }
+        const allDatesSet = new Set();
+        const seriesData = [];
+        for (let combo of selectedCombos) {
+            const filtered = allData.filter(r => r.品牌 === combo.brand && r.SIF === combo.sif);
+            filtered.sort((a,b) => a.日期标准.localeCompare(b.日期标准));
+            const dates = filtered.map(r => {
+                const parts = r.日期标准.split('-');
+                return `${parts[1]}-${parts[2]}`;
+            });
+            const prices = filtered.map(r => r[part] !== null ? r[part] : null);
+            dates.forEach(d => allDatesSet.add(d));
+            seriesData.push({ name: `${combo.brand} ${combo.sif}`, dates, prices });
+        }
+        const allDates = Array.from(allDatesSet).sort();
+        const alignedSeries = seriesData.map(s => ({
+            name: s.name,
+            data: allDates.map(d => {
+                const idx = s.dates.indexOf(d);
+                return idx !== -1 ? s.prices[idx] : null;
+            })
+        }));
+        const maxPoints = 50;
+        const sampledSeries = alignedSeries.map(ser => {
+            const validIndices = [];
+            for (let i = 0; i < ser.data.length; i++) {
+                if (ser.data[i] !== null) validIndices.push(i);
+            }
+            if (validIndices.length <= maxPoints) return ser;
+            const points = validIndices.map(i => [i, ser.data[i]]);
+            const sampledPoints = lttb(points, maxPoints);
+            const keepIndices = sampledPoints.map(p => p[0]);
+            const sampledData = ser.data.map((v, idx) => keepIndices.includes(idx) ? v : null);
+            return { name: ser.name, data: sampledData };
+        });
+        const series = sampledSeries.map((s, idx) => ({
+            name: s.name,
+            type: 'line',
+            data: s.data,
+            connectNulls: false,
+            symbol: 'none',
+            lineStyle: { width: 1.5, opacity: 0.7, color: colorPalette[idx % colorPalette.length] },
+            emphasis: { scale: false }
+        }));
+        const chartDom = document.getElementById('compareChart');
+        if (chartDom) {
+            if (!compareChart) compareChart = echarts.init(chartDom);
+            compareChart.setOption({
+                animation: false,
+                color: colorPalette,
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'line', snap: false, lineStyle: { type: 'dashed', width: 1 } },
+                    transitionDuration: 0,
+                    valueFormatter: v => v !== null ? v.toFixed(1) + ' 元/KG' : '休市'
+                },
+                legend: { data: sampledSeries.map(s => s.name), top: 0, left: 'center', type: 'scroll', itemWidth: 20, itemHeight: 10 },
+                grid: { left: '5%', right: '5%', top: '12%', bottom: '5%', containLabel: true },
+                xAxis: { type: 'category', data: allDates, name: '日期 (月-日)', axisLabel: { rotate: 30, interval: 'auto', fontSize: 10 } },
+                yAxis: { type: 'value', name: `价格 (元/KG)`, min: 'dataMin' },
+                series
+            }, true);
+        }
+    }
+    
+    function renderWeeklyTable() {
+        const latestData = allData.filter(d => d.日期标准 === latestDate);
+        const factoryMap = new Map();
+        for (let row of latestData) {
+            const key = `${row.品牌}|${row.SIF}`;
+            if (!factoryMap.has(key)) factoryMap.set(key, { brand: row.品牌, sif: row.SIF, prices: {} });
+            const entry = factoryMap.get(key);
+            for (let part of partFields) {
+                entry.prices[part] = row[part] !== null ? row[part] : null;
+            }
+        }
+        const factoryList = Array.from(factoryMap.values()).sort((a,b) => {
+            const brandIndexA = uniqueBrands.indexOf(a.brand);
+            const brandIndexB = uniqueBrands.indexOf(b.brand);
+            if (brandIndexA !== brandIndexB) return brandIndexA - brandIndexB;
+            const sifOrderA = brandSifMap[a.brand] ? brandSifMap[a.brand].indexOf(a.sif) : -1;
+            const sifOrderB = brandSifMap[b.brand] ? brandSifMap[b.brand].indexOf(b.sif) : -1;
+            return sifOrderA - sifOrderB;
+        });
+        const thead = document.getElementById('weeklyTableHead');
+        const tbody = document.getElementById('weeklyTableBody');
+        thead.innerHTML = '<tr><th>品牌 + 厂号</th>' + partFields.map(p => `<th>${p}</th>`).join('') + '</tr>';
+        const fragment = document.createDocumentFragment();
+        for (let factory of factoryList) {
+            const tr = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            nameCell.innerText = `${factory.brand} ${factory.sif}`;
+            nameCell.style.fontWeight = '500';
+            tr.appendChild(nameCell);
+            for (let part of partFields) {
+                const price = factory.prices[part];
+                const td = document.createElement('td');
+                if (price !== null && price !== undefined) td.innerText = price.toFixed(1);
+                else td.innerHTML = '<span class="badge-null">—</span>';
+                tr.appendChild(td);
+            }
+            fragment.appendChild(tr);
+        }
+        tbody.innerHTML = '';
+        tbody.appendChild(fragment);
+        if (factoryList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="16">暂无最新日期数据<\/td><\/tr>';
+        }
+        const dateSpan = document.querySelector('.table-wrapper .chart-title');
+        if (dateSpan && latestDate) {
+            const parts = latestDate.split('-');
+            dateSpan.innerHTML = `<i class="fas fa-calendar-week"></i> 最新价格表 (元/KG) — ${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+        }
+    }
+    
+    // ==================== UI筛选 ====================
+    function renderFilters() {
+        const brandSifSelect = document.getElementById('brandSifSelect');
+        brandSifSelect.innerHTML = allBrandSifCombos.map(c => `<option value="${c.brand}|${c.sif}" ${c.brand === currentBrand && c.sif === currentSIF ? 'selected' : ''}>${c.display}</option>`).join('');
+        renderPartMultiBox();
+    }
+    
+    function renderPartMultiBox() {
+        const container = document.getElementById('partMultiBox');
+        container.innerHTML = '';
+        partFields.forEach(part => {
+            const span = document.createElement('span');
+            span.style.background = selectedParts.includes(part) ? '#d9e8f2' : '#f0f4fa';
+            span.innerHTML = `${part} ${selectedParts.includes(part) ? '<i class="fas fa-check-circle"></i>' : '<i class="far fa-circle"></i>'}`;
+            span.addEventListener('click', () => {
+                if (selectedParts.includes(part)) {
+                    if (selectedParts.length === 1) return;
+                    selectedParts = selectedParts.filter(p => p !== part);
+                } else {
+                    selectedParts.push(part);
+                }
+                renderPartMultiBox();
+                updateAll();
+            });
+            container.appendChild(span);
+        });
+    }
+    
+    function updateAll() {
+        updateTrendChart();
+        renderStats();
+        const comparePart = document.getElementById('comparePartSelect').value;
+        if (comparePart && selectedParts.includes(comparePart)) {
+            updateCompareChart();
+        }
+    }
+    
+    document.getElementById('brandSifSelect').addEventListener('change', (e) => {
+        const [brand, sif] = e.target.value.split('|');
+        currentBrand = brand;
+        currentSIF = sif;
+        updateAll();
+    });
+    
+    document.getElementById('selectAllPartsBtn').addEventListener('click', () => {
+        selectedParts = [...partFields];
+        renderPartMultiBox();
+        updateAll();
+    });
+    document.getElementById('clearPartsBtn').addEventListener('click', () => {
+        if (partFields.length > 0) selectedParts = [partFields[0]];
+        else selectedParts = [];
+        renderPartMultiBox();
+        updateAll();
+    });
+    
+    function initCompareControls() {
+        const partSelect = document.getElementById('comparePartSelect');
+        partSelect.innerHTML = partFields.map(p => `<option value="${p}">${p}</option>`).join('');
+        partSelect.value = selectedParts[0] || partFields[0];
+        const container = document.getElementById('compareSifGroups');
+        container.innerHTML = '';
+        for (let brand of uniqueBrands) {
+            const sifs = brandSifMap[brand] || [];
+            if (sifs.length === 0) continue;
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'brand-group';
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'brand-header';
+            headerDiv.innerHTML = `
+                <h4><i class="fas fa-building"></i> ${brand}</h4>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="brand-avg" id="brandAvg-${brand}">品牌均价: —</span>
+                    <div class="brand-buttons">
+                        <button class="select-all-brand" data-brand="${brand}">全选</button>
+                        <button class="clear-brand" data-brand="${brand}">清空</button>
+                    </div>
+                </div>
+            `;
+            groupDiv.appendChild(headerDiv);
+            const listDiv = document.createElement('div');
+            listDiv.className = 'sif-checkbox-list';
+            sifs.forEach(sif => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${brand}|${sif}"> ${sif}`;
+                listDiv.appendChild(label);
+            });
+            groupDiv.appendChild(listDiv);
+            container.appendChild(groupDiv);
+            brandAvgSpans[brand] = document.getElementById(`brandAvg-${brand}`);
+        }
+        document.querySelectorAll('.select-all-brand').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const brand = btn.getAttribute('data-brand');
+                const groupDiv = btn.closest('.brand-group');
+                const checkboxes = groupDiv.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = true);
+                updateCompareChart();
+            });
+        });
+        document.querySelectorAll('.clear-brand').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const brand = btn.getAttribute('data-brand');
+                const groupDiv = btn.closest('.brand-group');
+                const checkboxes = groupDiv.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = false);
+                updateCompareChart();
+            });
+        });
+        const allCheckboxes = container.querySelectorAll('input[type="checkbox"]');
+        for (let i = 0; i < Math.min(6, allCheckboxes.length); i++) allCheckboxes[i].checked = true;
+        partSelect.addEventListener('change', () => {
+            const part = partSelect.value;
+            updateBrandAvgDisplays(part);
+            updateGlobalStats(part);
+            updateCompareChart();
+        });
+        container.addEventListener('change', (e) => {
+            if (e.target.type === 'checkbox') updateCompareChart();
+        });
+        const initialPart = partSelect.value;
+        updateBrandAvgDisplays(initialPart);
+        updateGlobalStats(initialPart);
+        updateCompareChart();
+    }
+    
+    function initDashboard() {
+        renderFilters();
+        updateAll();
+        initCompareControls();
+        renderWeeklyTable();
+    }
+    
+    function loadDataFromCSV() {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loadingOverlay';
+        loadingDiv.className = 'loading-overlay';
+        loadingDiv.innerHTML = '<div class="loading-spinner"></div><div>正在加载数据...</div>';
+        document.body.appendChild(loadingDiv);
+        fetch('data.csv?t=' + Date.now())
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                return response.text();
+            })
+            .then(csvText => {
+                allData = parseCSVtoData(csvText);
+                if (!allData || allData.length === 0) throw new Error('CSV文件无有效数据');
+                buildDataStructures();
+                initDashboard();
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) overlay.remove();
+            })
+            .catch(error => {
+                console.error('数据加载失败:', error);
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) overlay.remove();
+                const container = document.querySelector('.dashboard-container');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 数据加载失败：${error.message}<br>请确保 data.csv 文件存在且格式正确。`;
+                container.prepend(errorDiv);
+            });
+    }
+    
+    loadDataFromCSV();
+</script>
+</body>
+</html>
