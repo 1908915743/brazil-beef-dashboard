@@ -1,0 +1,32 @@
+{
+  "updated_at": null,
+  "data_status": "待接入",
+  "items": [
+    {
+      "id": "china_beef_wholesale",
+      "name": "全国农产品批发市场牛肉平均价格",
+      "value": null,
+      "unit": "元/公斤",
+      "quote_date": null,
+      "change_value": null,
+      "change_pct": null,
+      "source_name": "农业农村部农产品批发市场信息平台",
+      "source_url": "https://pfsc.agri.cn/",
+      "status": "待接入",
+      "note": "需核实牛肉价格的具体指标口径、公开获取方式及自动化使用条件。"
+    },
+    {
+      "id": "brazil_carcaca_casada",
+      "name": "Carcaça Casada（牛胴体批发价）",
+      "value": null,
+      "unit": "雷亚尔/公斤",
+      "quote_date": null,
+      "change_value": null,
+      "change_pct": null,
+      "source_name": "Scot Consultoria",
+      "source_url": "https://www.scotconsultoria.com.br/",
+      "status": "待接入",
+      "note": "需核实报价获取方式及数据转载、自动抓取和公开展示授权。"
+    }
+  ]
+}
