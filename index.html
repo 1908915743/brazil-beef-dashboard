@@ -107,7 +107,32 @@
         .data-table td { padding: 6px; text-align: center; border-bottom: 1px solid #f0f4f9; color: #2d3e4f; }
         .badge-null { color: #9aaebf; font-style: italic; font-size: 0.7rem; }
         .footer-note { margin-top: 24px; text-align: right; font-size: 0.7rem; color: #7893a7; border-top: 1px solid #e2eaf0; padding-top: 16px; }
+        /* 批发价快报 */
+        .wholesale-card { padding: 22px 24px; }
+        .wholesale-heading-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+        .wholesale-heading-row .chart-title { margin-bottom: 0; }
+        .wholesale-updated { color: #8294a5; font-size: 0.76rem; }
+        .wholesale-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .wholesale-price-card { border: 1px solid #e7edf3; border-radius: 20px; padding: 20px; background: linear-gradient(135deg, #fbfdff, #f4f8fc); min-width: 0; }
+        .wholesale-market { display: flex; align-items: center; gap: 9px; color: #496779; font-size: 0.88rem; font-weight: 600; }
+        .wholesale-market i { color: #2A6F8F; font-size: 1.05rem; }
+        .wholesale-product { color: #8294a5; font-size: 0.78rem; margin-top: 6px; min-height: 18px; }
+        .wholesale-price { color: #1f4868; font-size: clamp(1.8rem, 3vw, 2.35rem); font-weight: 750; letter-spacing: -0.5px; margin: 15px 0 7px; line-height: 1.2; overflow-wrap: anywhere; }
+        .wholesale-price small { font-size: 0.88rem; font-weight: 500; letter-spacing: 0; color: #6b7f8e; }
+        .wholesale-change { font-size: 0.8rem; color: #718596; min-height: 18px; }
+        .wholesale-change.change-up { color: #2c7a4d; }
+        .wholesale-change.change-down { color: #c7362b; }
+        .wholesale-details { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 17px; padding-top: 13px; border-top: 1px solid #e4ebf2; color: #8294a5; font-size: 0.73rem; }
+        .wholesale-status { display: inline-flex; align-items: center; gap: 5px; color: #9a6b20; background: #fff4dc; padding: 4px 9px; border-radius: 20px; font-size: 0.7rem; white-space: nowrap; }
+        .wholesale-status.status-ready { color: #2c7a4d; background: #e6f5ec; }
+        .wholesale-source { color: #2A6F8F; text-decoration: none; }
+        .wholesale-source:hover { text-decoration: underline; }
+        .wholesale-footnote { color: #8a9aaa; font-size: 0.72rem; line-height: 1.7; margin-top: 14px; }
         @media (max-width: 780px) {
+            .wholesale-grid { grid-template-columns: 1fr; }
+            .wholesale-card { padding: 18px 16px; }
+            .wholesale-price-card { padding: 17px; }
+
             body { padding: 16px; }
             .filter-group { width: 100%; }
             .multi-select-box { width: 100%; }
@@ -131,6 +156,46 @@
             <i class="fas fa-cut"></i> 价格趋势 (元/KG)
         </div>
     </div>
+
+    <section class="chart-card wholesale-card" id="wholesaleBrief" aria-labelledby="wholesaleTitle">
+        <div class="wholesale-heading-row">
+            <h2 class="chart-title" id="wholesaleTitle"><i class="fas fa-bolt"></i> 批发价价格快报</h2>
+            <div class="wholesale-updated" id="wholesaleUpdated">行情数据状态：待接入</div>
+        </div>
+        <div class="wholesale-grid">
+            <article class="wholesale-price-card" id="chinaWholesaleCard">
+                <div class="wholesale-heading-row" style="margin-bottom:0">
+                    <div>
+                        <div class="wholesale-market"><i class="fas fa-map-marker-alt"></i> 中国国内批发市场</div>
+                        <div class="wholesale-product">全国农产品批发市场牛肉平均价格</div>
+                    </div>
+                    <span class="wholesale-status" id="chinaWholesaleStatus">待接入</span>
+                </div>
+                <div class="wholesale-price" id="chinaWholesalePrice">— <small>元/公斤</small></div>
+                <div class="wholesale-change" id="chinaWholesaleChange">日涨跌：待接入</div>
+                <div class="wholesale-details">
+                    <span>报价日期：<strong id="chinaWholesaleDate">暂无</strong></span>
+                    <a class="wholesale-source" id="chinaWholesaleSource" href="https://pfsc.agri.cn/" target="_blank" rel="noopener noreferrer">查看数据来源 ↗</a>
+                </div>
+            </article>
+            <article class="wholesale-price-card" id="brazilWholesaleCard">
+                <div class="wholesale-heading-row" style="margin-bottom:0">
+                    <div>
+                        <div class="wholesale-market"><i class="fas fa-globe-americas"></i> 巴西牛胴体批发价</div>
+                        <div class="wholesale-product">Carcaça Casada（牛胴体批发价）</div>
+                    </div>
+                    <span class="wholesale-status" id="brazilWholesaleStatus">待接入</span>
+                </div>
+                <div class="wholesale-price" id="brazilWholesalePrice">— <small>雷亚尔/公斤</small></div>
+                <div class="wholesale-change" id="brazilWholesaleChange">日涨跌：待接入</div>
+                <div class="wholesale-details">
+                    <span>报价日期：<strong id="brazilWholesaleDate">暂无</strong></span>
+                    <a class="wholesale-source" id="brazilWholesaleSource" href="https://www.scotconsultoria.com.br/" target="_blank" rel="noopener noreferrer">查看数据来源 ↗</a>
+                </div>
+            </article>
+        </div>
+        <p class="wholesale-footnote">说明：此板块独立于现有巴西牛产品现货看板。当前展示数据接入状态，不代表实时行情；接入并核验来源后，将按实际报价日期展示价格及涨跌。不同市场、统计口径和计价单位不完全相同，请勿直接将两项价格作简单等值比较。</p>
+    </section>
 
     <div class="filters-card">
         <div class="filter-group">
@@ -847,6 +912,72 @@
         renderWeeklyTable();
     }
     
+    // 独立加载批发价快报，不影响原有 data.csv 看板
+    function formatWholesaleNumber(value) {
+        if (value === null || value === undefined || value === '') return '—';
+        const number = Number(value);
+        return Number.isFinite(number) ? number.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+    }
+
+    function renderWholesaleItem(item, prefix) {
+        if (!item) return;
+        const priceEl = document.getElementById(prefix + 'WholesalePrice');
+        const changeEl = document.getElementById(prefix + 'WholesaleChange');
+        const dateEl = document.getElementById(prefix + 'WholesaleDate');
+        const statusEl = document.getElementById(prefix + 'WholesaleStatus');
+        const sourceEl = document.getElementById(prefix + 'WholesaleSource');
+        if (!priceEl || !changeEl || !dateEl || !statusEl || !sourceEl) return;
+
+        const value = item.value;
+        priceEl.textContent = value === null || value === undefined || value === ''
+            ? '—' : formatWholesaleNumber(value);
+        const unit = document.createElement('small');
+        unit.textContent = ' ' + (item.unit || '');
+        priceEl.appendChild(unit);
+
+        let changeText = '日涨跌：暂无数据';
+        changeEl.classList.remove('change-up', 'change-down');
+        if (item.change_value !== null && item.change_value !== undefined && item.change_value !== '') {
+            const change = Number(item.change_value);
+            if (Number.isFinite(change)) {
+                const sign = change > 0 ? '+' : '';
+                changeText = '日涨跌：' + sign + formatWholesaleNumber(change) + (item.change_pct !== null && item.change_pct !== undefined && item.change_pct !== '' ? '（' + (Number(item.change_pct) > 0 ? '+' : '') + formatWholesaleNumber(item.change_pct) + '%）' : '');
+                if (change > 0) changeEl.classList.add('change-up');
+                if (change < 0) changeEl.classList.add('change-down');
+            }
+        }
+        changeEl.textContent = changeText;
+        dateEl.textContent = item.quote_date || '暂无';
+        statusEl.textContent = item.status || (value === null || value === undefined || value === '' ? '待接入' : '已接入');
+        statusEl.classList.toggle('status-ready', value !== null && value !== undefined && value !== '');
+        if (item.source_url) {
+            sourceEl.href = item.source_url;
+        }
+        if (item.source_name) {
+            sourceEl.textContent = '来源：' + item.source_name + ' ↗';
+        }
+    }
+
+    function loadWholesaleBrief() {
+        fetch('wholesale_price.json?t=' + Date.now())
+            .then(response => {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(data => {
+                const items = Array.isArray(data.items) ? data.items : [];
+                renderWholesaleItem(items.find(item => item.id === 'china_beef_wholesale'), 'china');
+                renderWholesaleItem(items.find(item => item.id === 'brazil_carcaca_casada'), 'brazil');
+                const updatedEl = document.getElementById('wholesaleUpdated');
+                if (updatedEl) updatedEl.textContent = data.updated_at ? '数据更新时间：' + data.updated_at : '行情数据状态：待接入';
+            })
+            .catch(error => {
+                console.warn('批发价快报数据暂不可用，原有看板不受影响：', error);
+                const updatedEl = document.getElementById('wholesaleUpdated');
+                if (updatedEl) updatedEl.textContent = '行情数据文件暂不可用';
+            });
+    }
+
     function loadDataFromCSV() {
         const loadingDiv = document.createElement('div');
         loadingDiv.id = 'loadingOverlay';
@@ -878,6 +1009,7 @@
             });
     }
     
+    loadWholesaleBrief();
     loadDataFromCSV();
 </script>
 </body>
