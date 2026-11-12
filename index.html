@@ -939,20 +939,27 @@
 
         let changeText = '日涨跌：暂无数据';
         changeEl.classList.remove('change-up', 'change-down');
-        if (item.change_direction && item.change_pct !== null && item.change_pct !== undefined && item.change_pct !== '') {
-            const directionText = item.change_direction === 'up' ? '上涨' : item.change_direction === 'down' ? '下跌' : '';
-            if (directionText) {
-                changeText = '日涨跌：较昨日' + directionText + ' ' + formatWholesaleNumber(item.change_pct) + '%';
-                changeEl.classList.add(item.change_direction === 'up' ? 'change-up' : 'change-down');
+        const hasChangeValue = item.change_value !== null && item.change_value !== undefined && item.change_value !== '' && Number.isFinite(Number(item.change_value));
+        const hasChangePct = item.change_pct !== null && item.change_pct !== undefined && item.change_pct !== '' && Number.isFinite(Number(item.change_pct));
+        let direction = item.change_direction;
+        if (!direction && hasChangeValue) {
+            direction = Number(item.change_value) > 0 ? 'up' : Number(item.change_value) < 0 ? 'down' : 'flat';
+        }
+        if (direction === 'up' || direction === 'down') {
+            const directionText = direction === 'up' ? '上涨' : '下跌';
+            const parts = [];
+            if (hasChangeValue) {
+                parts.push(directionText + ' ' + formatWholesaleNumber(Math.abs(Number(item.change_value))) + ' 元/公斤');
             }
-        } else if (item.change_value !== null && item.change_value !== undefined && item.change_value !== '') {
-            const change = Number(item.change_value);
-            if (Number.isFinite(change)) {
-                const sign = change > 0 ? '+' : '';
-                changeText = '日涨跌：' + sign + formatWholesaleNumber(change) + (item.change_pct !== null && item.change_pct !== undefined && item.change_pct !== '' ? '（' + (Number(item.change_pct) > 0 ? '+' : '') + formatWholesaleNumber(item.change_pct) + '%）' : '');
-                if (change > 0) changeEl.classList.add('change-up');
-                if (change < 0) changeEl.classList.add('change-down');
+            if (hasChangePct) {
+                parts.push((Number(item.change_pct) > 0 ? '+' : '') + formatWholesaleNumber(item.change_pct) + '%');
             }
+            if (parts.length) {
+                changeText = '日涨跌：较上一报告日' + parts.join('（') + (parts.length > 1 ? '）' : '');
+                changeEl.classList.add(direction === 'up' ? 'change-up' : 'change-down');
+            }
+        } else if (direction === 'flat') {
+            changeText = '日涨跌：较上一报告日持平';
         }
         changeEl.textContent = changeText;
         const briefEl = prefix === 'china' ? document.getElementById('chinaWholesaleBrief') : null;
