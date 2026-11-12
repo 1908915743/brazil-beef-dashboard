@@ -83,7 +83,24 @@ def fetch_moa_beef():
     quotes = [quote for row in reports if (quote := extract_beef_price(row))]
     if not quotes:
         raise ValueError("No dated beef price found in the latest report page")
-    return max(quotes, key=lambda quote: quote["quote_date"])
+
+    # Sort distinct report dates so the absolute day-on-day change is based
+    # on the immediately preceding published report, not an assumed calendar day.
+    by_date = {}
+    for quote in quotes:
+        by_date[quote["quote_date"]] = quote
+    ordered = sorted(by_date.values(), key=lambda quote: quote["quote_date"], reverse=True)
+    latest = dict(ordered[0])
+    if len(ordered) > 1:
+        previous = ordered[1]
+        latest["change_value"] = round(latest["value"] - previous["value"], 2)
+        latest["previous_value"] = previous["value"]
+        latest["previous_quote_date"] = previous["quote_date"]
+    else:
+        latest["change_value"] = None
+        latest["previous_value"] = None
+        latest["previous_quote_date"] = None
+    return latest
 
 
 def main():
@@ -111,7 +128,9 @@ def main():
         china.update({
             "value": quote["value"],
             "quote_date": quote["quote_date"],
-            "change_value": None,
+            "change_value": quote.get("change_value"),
+            "previous_value": quote.get("previous_value"),
+            "previous_quote_date": quote.get("previous_quote_date"),
             "change_pct": quote["change_pct"],
             "change_direction": quote["change_direction"],
             "daily_brief": quote["daily_brief"],
