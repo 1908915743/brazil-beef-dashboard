@@ -13,10 +13,7 @@ OUTPUT = ROOT / "wholesale_price.json"
 
 # This endpoint was observed in the PFSC site's own report-list request.
 # Confirm permission/terms for automated business use before enabling scheduled calls.
-MOA_REPORT_API = os.getenv(
-    "MOA_WHOLESALE_API_URL",
-    "https://pfsc.agri.cn/api/FarmDaily/list",
-).strip()
+MOA_REPORT_API = os.getenv("MOA_WHOLESALE_API_URL", "").strip() or "https://pfsc.agri.cn/api/FarmDaily/list"
 MOA_PAGE_SIZE = 10
 
 
