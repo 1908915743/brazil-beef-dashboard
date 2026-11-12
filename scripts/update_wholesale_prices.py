@@ -30,6 +30,11 @@ def extract_beef_price(report):
     if not match:
         return None
 
+    # The official daily brief usually states the day-on-day direction and percentage.
+    change_match = re.search(
+        r"牛肉[^；;。]{0,120}?比昨天(上升|下降)([0-9]+(?:\.[0-9]+)?)%",
+        summary,
+    )
     raw_date = report.get("daylyDate") or report.get("dailyDate") or ""
     if not isinstance(raw_date, str) or len(raw_date) < 10:
         return None
@@ -37,9 +42,20 @@ def extract_beef_price(report):
     try:
         datetime.strptime(quote_date, "%Y-%m-%d")
         value = float(match.group(1))
+        change_pct = float(change_match.group(2)) if change_match else None
     except ValueError:
         return None
-    return value, quote_date
+    return {
+        "value": value,
+        "quote_date": quote_date,
+        "change_pct": change_pct,
+        "change_direction": (
+            "up" if change_match and change_match.group(1) == "上升"
+            else "down" if change_match else None
+        ),
+        "daily_brief": summary,
+        "report_title": report.get("conclusion") or "",
+    }
 
 
 def fetch_moa_beef():
@@ -67,7 +83,7 @@ def fetch_moa_beef():
     quotes = [quote for row in reports if (quote := extract_beef_price(row))]
     if not quotes:
         raise ValueError("No dated beef price found in the latest report page")
-    return max(quotes, key=lambda quote: quote[1])
+    return max(quotes, key=lambda quote: quote["quote_date"])
 
 
 def main():
@@ -91,13 +107,23 @@ def main():
     })
     failures = []
     try:
-        value, quote_date = fetch_moa_beef()
+        quote = fetch_moa_beef()
         china.update({
-            "value": value,
-            "quote_date": quote_date,
+            "value": quote["value"],
+            "quote_date": quote["quote_date"],
+            "change_value": None,
+            "change_pct": quote["change_pct"],
+            "change_direction": quote["change_direction"],
+            "daily_brief": quote["daily_brief"],
+            "report_title": quote["report_title"],
             "status": "已更新",
         })
-        print(f"china_beef_wholesale: {value} 元/公斤 ({quote_date})")
+        print(
+            f"china_beef_wholesale: {quote['value']} 元/公斤 "
+            f"({quote['quote_date']}); day-on-day: "
+            f"{quote['change_direction'] or '未提供'} "
+            f"{quote['change_pct'] if quote['change_pct'] is not None else 'N/A'}%"
+        )
     except Exception as exc:
         china["status"] = "更新失败，保留上次有效数据"
         failures.append("china_beef_wholesale")
