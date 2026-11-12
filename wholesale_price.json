@@ -1,18 +1,18 @@
 {
-  "updated_at": null,
-  "update_status": "pending_source_access",
+  "updated_at": "2026-11-12T09:08:30+00:00",
+  "update_status": "ok",
   "items": [
     {
       "id": "china_beef_wholesale",
       "name": "全国牛肉平均批发价格",
-      "value": null,
+      "value": 74.1,
       "unit": "元/公斤",
-      "quote_date": null,
+      "quote_date": "2026-11-12",
       "change_value": null,
       "change_pct": null,
-      "status": "待申请官方数据接口",
-      "source_name": "农业农村部重点农产品市场信息平台",
-      "source_url": "https://ncpscxx.moa.gov.cn/"
+      "status": "已更新",
+      "source_name": "农业农村部农产品批发市场每日报告",
+      "source_url": "https://pfsc.agri.cn/#/analysisReport"
     },
     {
       "id": "brazil_carcaca_casada",
