@@ -1,9 +1,8 @@
 name: Update wholesale price brief
 
 on:
-  schedule:
-    # Daily at 07:00 UTC (15:00 China Standard Time, UTC+8)
-    - cron: "0 7 * * *"
+  # Temporary test entry point. Add the 15:00 (UTC+8) schedule after
+  # the tested collector script and JSON file are merged into main.
   workflow_dispatch:
 
 permissions:
