@@ -141,7 +141,9 @@ def main():
             f"china_beef_wholesale: {quote['value']} 元/公斤 "
             f"({quote['quote_date']}); day-on-day: "
             f"{quote['change_direction'] or '未提供'} "
-            f"{quote['change_pct'] if quote['change_pct'] is not None else 'N/A'}%"
+            f"{quote['change_pct'] if quote['change_pct'] is not None else 'N/A'}%; "
+            f"absolute change: {quote.get('change_value') if quote.get('change_value') is not None else 'N/A'} 元/公斤; "
+            f"previous quote: {quote.get('previous_quote_date') or 'N/A'}"
         )
     except Exception as exc:
         china["status"] = "更新失败，保留上次有效数据"
