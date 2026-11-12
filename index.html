@@ -122,6 +122,7 @@
         .wholesale-change { font-size: 0.8rem; color: #718596; min-height: 18px; }
         .wholesale-change.change-up { color: #2c7a4d; }
         .wholesale-change.change-down { color: #c7362b; }
+        .wholesale-daily-brief { color: #64798a; font-size: 0.78rem; line-height: 1.7; margin-top: 10px; padding: 10px 12px; background: #f5f8fb; border-radius: 12px; }
         .wholesale-details { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 17px; padding-top: 13px; border-top: 1px solid #e4ebf2; color: #8294a5; font-size: 0.73rem; }
         .wholesale-status { display: inline-flex; align-items: center; gap: 5px; color: #9a6b20; background: #fff4dc; padding: 4px 9px; border-radius: 20px; font-size: 0.7rem; white-space: nowrap; }
         .wholesale-status.status-ready { color: #2c7a4d; background: #e6f5ec; }
@@ -173,6 +174,7 @@
                 </div>
                 <div class="wholesale-price" id="chinaWholesalePrice">— <small>元/公斤</small></div>
                 <div class="wholesale-change" id="chinaWholesaleChange">日涨跌：待接入</div>
+                <div class="wholesale-daily-brief" id="chinaWholesaleBrief" hidden></div>
                 <div class="wholesale-details">
                     <span>报价日期：<strong id="chinaWholesaleDate">暂无</strong></span>
                     <a class="wholesale-source" id="chinaWholesaleSource" href="https://pfsc.agri.cn/" target="_blank" rel="noopener noreferrer">查看数据来源 ↗</a>
@@ -937,7 +939,13 @@
 
         let changeText = '日涨跌：暂无数据';
         changeEl.classList.remove('change-up', 'change-down');
-        if (item.change_value !== null && item.change_value !== undefined && item.change_value !== '') {
+        if (item.change_direction && item.change_pct !== null && item.change_pct !== undefined && item.change_pct !== '') {
+            const directionText = item.change_direction === 'up' ? '上涨' : item.change_direction === 'down' ? '下跌' : '';
+            if (directionText) {
+                changeText = '日涨跌：较昨日' + directionText + ' ' + formatWholesaleNumber(item.change_pct) + '%';
+                changeEl.classList.add(item.change_direction === 'up' ? 'change-up' : 'change-down');
+            }
+        } else if (item.change_value !== null && item.change_value !== undefined && item.change_value !== '') {
             const change = Number(item.change_value);
             if (Number.isFinite(change)) {
                 const sign = change > 0 ? '+' : '';
@@ -947,6 +955,11 @@
             }
         }
         changeEl.textContent = changeText;
+        const briefEl = prefix === 'china' ? document.getElementById('chinaWholesaleBrief') : null;
+        if (briefEl) {
+            briefEl.textContent = item.daily_brief || '';
+            briefEl.hidden = !item.daily_brief;
+        }
         dateEl.textContent = item.quote_date || '暂无';
         statusEl.textContent = item.status || (value === null || value === undefined || value === '' ? '待接入' : '已接入');
         statusEl.classList.toggle('status-ready', value !== null && value !== undefined && value !== '');
