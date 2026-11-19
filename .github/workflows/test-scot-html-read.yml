@@ -1,0 +1,22 @@
+name: Test Scot Boi Capao HTML Read
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out test branch
+        uses: actions/checkout@v4
+        with:
+          ref: test/scot-html-read
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read Boi capao quote (read-only test)
+        run: python scripts/test_noticias_agricolas_scot.py
