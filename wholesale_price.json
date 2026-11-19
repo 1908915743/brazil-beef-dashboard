@@ -1,32 +1,35 @@
 {
-  "updated_at": null,
-  "data_status": "待接入",
+  "updated_at": "2026-11-19T03:14:40+00:00",
+  "update_status": "ok",
   "items": [
     {
       "id": "china_beef_wholesale",
-      "name": "全国农产品批发市场牛肉平均价格",
-      "value": null,
+      "name": "全国牛肉平均批发价格",
+      "value": 74.33,
       "unit": "元/公斤",
-      "quote_date": null,
-      "change_value": null,
-      "change_pct": null,
-      "source_name": "农业农村部农产品批发市场信息平台",
-      "source_url": "https://pfsc.agri.cn/",
-      "status": "待接入",
-      "note": "需核实牛肉价格的具体指标口径、公开获取方式及自动化使用条件。"
+      "quote_date": "2026-11-18",
+      "change_value": 0.44,
+      "change_pct": 0.6,
+      "status": "已更新",
+      "source_name": "农业农村部农产品批发市场每日报告",
+      "source_url": "https://pfsc.agri.cn/#/analysisReport",
+      "change_direction": "up",
+      "daily_brief": "猪肉平均价格为14.84元/公斤，比昨天上升1.0%；牛肉74.33元/公斤，比昨天上升0.6%；羊肉67.64元/公斤，比昨天上升0.2%；鸡蛋9.47元/公斤，与昨天持平；白条鸡16.97元/公斤，比昨天下降0.1%。",
+      "report_title": "",
+      "previous_value": 73.89,
+      "previous_quote_date": "2026-11-17"
     },
     {
       "id": "brazil_carcaca_casada",
       "name": "Carcaça Casada（牛胴体批发价）",
       "value": null,
-      "unit": "雷亚尔/公斤",
+      "unit": "R$/kg",
       "quote_date": null,
       "change_value": null,
       "change_pct": null,
+      "status": "待取得Scot授权及数据接口",
       "source_name": "Scot Consultoria",
-      "source_url": "https://www.scotconsultoria.com.br/",
-      "status": "待接入",
-      "note": "需核实报价获取方式及数据转载、自动抓取和公开展示授权。"
+      "source_url": "https://www.scotconsultoria.com.br/cotacoes/"
     }
   ]
 }
