@@ -1,21 +1,23 @@
 {
-  "updated_at": "2026-11-12T09:17:59+00:00",
+  "updated_at": "2026-11-19T03:14:40+00:00",
   "update_status": "ok",
   "items": [
     {
       "id": "china_beef_wholesale",
       "name": "全国牛肉平均批发价格",
-      "value": 74.1,
+      "value": 74.33,
       "unit": "元/公斤",
-      "quote_date": "2026-11-12",
-      "change_value": null,
-      "change_pct": 0.3,
+      "quote_date": "2026-11-18",
+      "change_value": 0.44,
+      "change_pct": 0.6,
       "status": "已更新",
       "source_name": "农业农村部农产品批发市场每日报告",
       "source_url": "https://pfsc.agri.cn/#/analysisReport",
       "change_direction": "up",
-      "daily_brief": "猪肉平均价格为14.85元/公斤，比昨天上升0.5%；牛肉74.1元/公斤，比昨天上升0.3%；羊肉67.11元/公斤，比昨天下降0.3%；鸡蛋9.51元/公斤，比昨天下降0.6%；白条鸡17.05元/公斤，比昨天下降0.8%。",
-      "report_title": ""
+      "daily_brief": "猪肉平均价格为14.84元/公斤，比昨天上升1.0%；牛肉74.33元/公斤，比昨天上升0.6%；羊肉67.64元/公斤，比昨天上升0.2%；鸡蛋9.47元/公斤，与昨天持平；白条鸡16.97元/公斤，比昨天下降0.1%。",
+      "report_title": "",
+      "previous_value": 73.89,
+      "previous_quote_date": "2026-11-17"
     },
     {
       "id": "brazil_carcaca_casada",
