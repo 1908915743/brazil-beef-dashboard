@@ -681,13 +681,16 @@
             seriesData.push({ name: `${combo.brand} ${combo.sif}`, dates, prices });
         }
         const allDates = Array.from(allDatesSet).sort();
-        const alignedSeries = seriesData.map(s => ({
-            name: s.name,
-            data: allDates.map(d => {
-                const idx = s.dates.indexOf(d);
-                return idx !== -1 ? s.prices[idx] : null;
-            })
-        }));
+        // 日期索引映射，避免反复调用 indexOf 扫描日期数组
+        const dateIndexMap = new Map(allDates.map((d, i) => [d, i]));
+        const alignedSeries = seriesData.map(s => {
+            const alignedData = Array(allDates.length).fill(null);
+            s.dates.forEach((d, i) => {
+                const targetIndex = dateIndexMap.get(d);
+                if (targetIndex !== undefined) alignedData[targetIndex] = s.prices[i];
+            });
+            return { name: s.name, data: alignedData };
+        });
         const maxPoints = 50;
         const sampledSeries = alignedSeries.map(ser => {
             const validIndices = [];
@@ -718,9 +721,23 @@
                 color: colorPalette,
                 tooltip: {
                     trigger: 'axis',
-                    axisPointer: { type: 'line', snap: false, lineStyle: { type: 'dashed', width: 1 } },
+                    axisPointer: { type: 'line', snap: false, animation: false, lineStyle: { type: 'dashed', width: 1 } },
                     transitionDuration: 0,
-                    valueFormatter: v => v !== null ? v.toFixed(1) + ' 元/KG' : '休市'
+                    formatter: params => {
+                        if (!params || !params.length) return '';
+                        const valid = params.filter(p => p.value !== null && p.value !== undefined);
+                        const dateLabel = params[0].axisValueLabel || params[0].axisValue || '';
+                        const limit = 25;
+                        const rows = valid.slice(0, limit).map(p =>
+                            '<div style="display:flex;justify-content:space-between;gap:16px;"><span>' +
+                            p.seriesName + '</span><b>' + Number(p.value).toFixed(1) + ' 元/KG</b></div>'
+                        ).join('');
+                        const more = valid.length > limit
+                            ? '<div style="margin-top:6px;color:#8a98a8;">其余 ' + (valid.length-limit) + ' 个厂号未显示（共 ' + valid.length + ' 个有价格）</div>'
+                            : '';
+                        return '<div style="max-height:300px;overflow-y:auto;min-width:180px;"><b style="display:block;margin-bottom:6px;">' +
+                            dateLabel + '</b>' + rows + more + (valid.length===0 ? '当日暂无价格' : '') + '</div>';
+                    }
                 },
                 legend: { data: sampledSeries.map(s => s.name), top: 0, left: 'center', type: 'scroll', itemWidth: 20, itemHeight: 10 },
                 grid: { left: '5%', right: '5%', top: '12%', bottom: '5%', containLabel: true },
