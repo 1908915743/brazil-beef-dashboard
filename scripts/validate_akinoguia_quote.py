@@ -42,7 +42,7 @@ def main():
     date = None
     for row in parser.rows:
         joined = " ".join(row)
-        m = re.search(r"(\\d{2}/\\d{2}/\\d{4})", joined)
+        m = re.search(r"(\d{2}/\d{2}/\d{4})", joined)
         if m and ("Atacado" in joined or "SP" in joined):
             date = m.group(1)
             break
