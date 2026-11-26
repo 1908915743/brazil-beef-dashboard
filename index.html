@@ -207,6 +207,11 @@
     <div class="filters-card">
         <div class="filter-group">
             <label><i class="fas fa-tag"></i> 品牌 + 厂号</label>
+            <div class="sif-search-row" style="margin:0 0 8px;">
+                <input id="trendSifSearch" type="search" placeholder="搜索品牌或厂号代码…" autocomplete="off" aria-label="搜索价格趋势厂号">
+                <button type="button" id="clearTrendSifSearch">清空</button>
+                <span class="sif-search-result" id="trendSifSearchResult">显示全部厂号</span>
+            </div>
             <select id="brandSifSelect"></select>
         </div>
         <div class="filter-group">
@@ -847,7 +852,33 @@
     // ==================== UI筛选 ====================
     function renderFilters() {
         const brandSifSelect = document.getElementById('brandSifSelect');
-        brandSifSelect.innerHTML = allBrandSifCombos.map(c => `<option value="${c.brand}|${c.sif}" ${c.brand === currentBrand && c.sif === currentSIF ? 'selected' : ''}>${c.display}</option>`).join('');
+        const searchInput = document.getElementById('trendSifSearch');
+        const clearButton = document.getElementById('clearTrendSifSearch');
+        const resultLabel = document.getElementById('trendSifSearchResult');
+        const renderBrandSifOptions = () => {
+            const keyword = (searchInput?.value || '').trim().toLowerCase();
+            const matches = allBrandSifCombos.filter(c =>
+                !keyword || (c.brand + ' ' + c.sif + ' ' + c.display).toLowerCase().includes(keyword)
+            );
+            brandSifSelect.innerHTML = matches.map(c =>
+                `<option value="${c.brand}|${c.sif}">${c.display}</option>`
+            ).join('');
+            const currentValue = `${currentBrand}|${currentSIF}`;
+            const currentOption = Array.from(brandSifSelect.options).find(o => o.value === currentValue);
+            if (currentOption) currentOption.selected = true;
+            else brandSifSelect.selectedIndex = -1;
+            if (resultLabel) resultLabel.textContent = keyword ? `匹配 ${matches.length} 个厂号` : `共 ${allBrandSifCombos.length} 个厂号`;
+        };
+        if (searchInput && !searchInput.__searchBound) {
+            searchInput.addEventListener('input', renderBrandSifOptions);
+            if (clearButton) clearButton.addEventListener('click', () => {
+                searchInput.value = '';
+                renderBrandSifOptions();
+                searchInput.focus();
+            });
+            searchInput.__searchBound = true;
+        }
+        renderBrandSifOptions();
         renderPartMultiBox();
     }
     
