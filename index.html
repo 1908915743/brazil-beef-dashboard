@@ -285,6 +285,7 @@
     let trendChart = null;
     let compareChart = null;
     let selectedCompareSeries = null;
+    let selectedTrendSeries = null;
     let brandAvgSpans = {};
     
     // 统一日期解析：将 "2026/1/5" 转换为 "2026-01-05" 字符串，便于排序和比较
@@ -581,8 +582,9 @@
                 data: sampledPrices,
                 connectNulls: false,
                 symbol: 'none',
-                lineStyle: { width: lineWidth, opacity: 0.85, color: colorPalette[idx % colorPalette.length] },
-                emphasis: { scale: false }
+                lineStyle: { width: part === selectedTrendSeries ? 4.5 : lineWidth, opacity: part === selectedTrendSeries ? 1 : 0.85, color: colorPalette[idx % colorPalette.length] },
+                triggerLineEvent: true,
+                emphasis: { disabled: true }
             });
         }
         
@@ -594,9 +596,21 @@
                 color: colorPalette,
                 tooltip: {
                     trigger: 'axis',
-                    axisPointer: { type: 'line', snap: false, lineStyle: { type: 'dashed', width: 1 } },
+                    axisPointer: { type: 'line', snap: false, animation: false, lineStyle: { type: 'dashed', width: 1 } },
                     transitionDuration: 0,
-                    valueFormatter: v => v !== null ? v.toFixed(1) + ' 元/KG' : '休市'
+                    formatter: params => {
+                        if (!params || !params.length) return '';
+                        const dateLabel = params[0].axisValueLabel || params[0].axisValue || '';
+                        const rows = params.filter(p => p.value !== null && p.value !== undefined).map(p => {
+                            const active = p.seriesName === selectedTrendSeries;
+                            return '<div style="display:flex;justify-content:space-between;gap:16px;' +
+                                (active ? 'font-weight:700;color:#111;' : '') + '">' +
+                                (active ? '★ ' : '') + p.seriesName + '<b>' +
+                                Number(p.value).toFixed(1) + ' 元/KG</b></div>';
+                        }).join('');
+                        return '<div style="min-width:180px;"><b style="display:block;margin-bottom:6px;">' +
+                            dateLabel + '</b>' + rows + '</div>';
+                    }
                 },
                 legend: { data: finalSeries.map(s => s.name), top: 0, left: 'center', itemWidth: 20, itemHeight: 10, type: 'scroll' },
                 grid: { left: '5%', right: '5%', top: '12%', bottom: '5%', containLabel: true },
@@ -604,6 +618,15 @@
                 yAxis: { type: 'value', name: '价格 (元/KG)', min: 'dataMin', axisLabel: { fontSize: 10 } },
                 series: finalSeries
             }, true);
+            if (!trendChart.__partClickBound) {
+                trendChart.on('click', params => {
+                    if (params && params.componentType === 'series' && params.seriesType === 'line' && params.seriesName) {
+                        selectedTrendSeries = selectedTrendSeries === params.seriesName ? null : params.seriesName;
+                        updateTrendChart();
+                    }
+                });
+                trendChart.__partClickBound = true;
+            }
         }
     }
     
@@ -711,8 +734,9 @@
             data: s.data,
             connectNulls: false,
             symbol: 'none',
-            lineStyle: { width: s.name === selectedCompareSeries ? 4 : 1.5, opacity: s.name === selectedCompareSeries ? 1 : 0.7, color: colorPalette[idx % colorPalette.length] },
-            emphasis: { scale: false, lineStyle: { width: s.name === selectedCompareSeries ? 4 : 2.5, opacity: 1 } }
+            lineStyle: { width: s.name === selectedCompareSeries ? 4.5 : 1.5, opacity: s.name === selectedCompareSeries ? 1 : 0.7, color: colorPalette[idx % colorPalette.length] },
+            triggerLineEvent: true,
+            emphasis: { disabled: true }
         }));
         const chartDom = document.getElementById('compareChart');
         if (chartDom) {
@@ -747,7 +771,7 @@
             }, true);
             if (!compareChart.__factoryClickBound) {
                 compareChart.on('click', params => {
-                    if (params && params.seriesName) {
+                    if (params && params.componentType === 'series' && params.seriesType === 'line' && params.seriesName) {
                         selectedCompareSeries = selectedCompareSeries === params.seriesName ? null : params.seriesName;
                         updateCompareChart();
                     }
