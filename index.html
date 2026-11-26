@@ -101,6 +101,11 @@
         .sif-checkbox-list label { display: inline-flex; align-items: center; gap: 6px; background: #f0f4fa; padding: 6px 12px; border-radius: 30px; font-size: 0.8rem; cursor: pointer; transition: 0.1s; }
         .sif-checkbox-list label:hover { background: #e2e8f0; }
         .sif-checkbox-list input { margin-right: 4px; cursor: pointer; }
+        .sif-search-row { display: flex; gap: 8px; align-items: center; margin: 0 0 14px; flex-wrap: wrap; }
+        .sif-search-row input { flex: 1 1 260px; min-width: 200px; max-width: 460px; padding: 10px 14px; border: 1px solid #cfdee9; border-radius: 12px; font-size: 0.88rem; color: #1e2f3c; outline: none; }
+        .sif-search-row input:focus { border-color: #2A6F8F; box-shadow: 0 0 0 3px rgba(42,111,143,0.14); }
+        .sif-search-row button { background: #eef2f6; border: 0; border-radius: 20px; padding: 8px 14px; cursor: pointer; color: #34566b; }
+        .sif-search-result { color: #718596; font-size: 0.78rem; }
         .table-wrapper { background: white; border-radius: 28px; padding: 8px 0 4px 0; overflow-x: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #eef2f6; margin-top: 20px; }
         .data-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; min-width: 1400px; }
         .data-table th { background: #f8fafd; padding: 10px 6px; text-align: center; font-weight: 600; color: #2c5a74; border-bottom: 1px solid #e2e8f0; font-size: 0.7rem; letter-spacing: 0.3px; }
@@ -236,6 +241,11 @@
                     <div class="stat-item"><i class="fas fa-arrow-up"></i> 最高: <span id="globalMax" class="stat-value">—</span> 元/KG <span id="globalMaxFactory" style="font-size:0.75rem;color:#5a6e7c;"></span></div>
                     <div class="stat-item"><i class="fas fa-arrow-down"></i> 最低: <span id="globalMin" class="stat-value">—</span> 元/KG <span id="globalMinFactory" style="font-size:0.75rem;color:#5a6e7c;"></span></div>
                 </div>
+            </div>
+            <div class="sif-search-row">
+                <input id="compareSifSearch" type="search" placeholder="搜索厂号或品牌，例如：JBS、厂号代码…" autocomplete="off" aria-label="搜索对比厂号">
+                <button type="button" id="clearCompareSifSearch">清空搜索</button>
+                <span class="sif-search-result" id="compareSifSearchResult">显示全部厂号</span>
             </div>
             <div id="compareSifGroups"></div>
         </div>
@@ -588,6 +598,8 @@
             });
         }
         
+        // 将选中曲线放在 series 最后绘制，避免被其他曲线遮挡
+        finalSeries.sort((a, b) => Number(a.name === selectedTrendSeries) - Number(b.name === selectedTrendSeries));
         const chartDom = document.getElementById('trendChart');
         if (chartDom) {
             if (!trendChart) trendChart = echarts.init(chartDom);
@@ -734,10 +746,11 @@
             data: s.data,
             connectNulls: false,
             symbol: 'none',
+            z: s.name === selectedCompareSeries ? 20 : 1,
             lineStyle: { width: s.name === selectedCompareSeries ? 4.5 : 1.5, opacity: s.name === selectedCompareSeries ? 1 : 0.7, color: colorPalette[idx % colorPalette.length] },
             triggerLineEvent: true,
             emphasis: { disabled: true }
-        }));
+        })).sort((a, b) => Number(a.name === selectedCompareSeries) - Number(b.name === selectedCompareSeries));
         const chartDom = document.getElementById('compareChart');
         if (chartDom) {
             if (!compareChart) compareChart = echarts.init(chartDom);
@@ -893,6 +906,35 @@
         partSelect.value = selectedParts[0] || partFields[0];
         const container = document.getElementById('compareSifGroups');
         container.innerHTML = '';
+        const searchInput = document.getElementById('compareSifSearch');
+        const clearSearchButton = document.getElementById('clearCompareSifSearch');
+        const searchResult = document.getElementById('compareSifSearchResult');
+        const applySifSearch = () => {
+            const keyword = (searchInput?.value || '').trim().toLowerCase();
+            let visibleCount = 0;
+            container.querySelectorAll('.brand-group').forEach(group => {
+                const brandName = group.querySelector('.brand-header h4')?.textContent || '';
+                let groupVisibleCount = 0;
+                group.querySelectorAll('.sif-checkbox-list label').forEach(label => {
+                    const searchableText = (brandName + ' ' + label.textContent).toLowerCase();
+                    const matched = !keyword || searchableText.includes(keyword);
+                    label.hidden = !matched;
+                    if (matched) groupVisibleCount++;
+                });
+                group.hidden = groupVisibleCount === 0;
+                visibleCount += groupVisibleCount;
+            });
+            if (searchResult) searchResult.textContent = keyword ? `匹配 ${visibleCount} 个厂号` : '显示全部厂号';
+        };
+        if (searchInput && !searchInput.__searchBound) {
+            searchInput.addEventListener('input', applySifSearch);
+            if (clearSearchButton) clearSearchButton.addEventListener('click', () => {
+                searchInput.value = '';
+                applySifSearch();
+                searchInput.focus();
+            });
+            searchInput.__searchBound = true;
+        }
         for (let brand of uniqueBrands) {
             const sifs = brandSifMap[brand] || [];
             if (sifs.length === 0) continue;
@@ -951,6 +993,7 @@
         container.addEventListener('change', (e) => {
             if (e.target.type === 'checkbox') updateCompareChart();
         });
+        applySifSearch();
         const initialPart = partSelect.value;
         updateBrandAvgDisplays(initialPart);
         updateGlobalStats(initialPart);
