@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-time, read-only HTML test of AkinoGuia Atacado page."""
+"""One-time read-only diagnostic test of AkinoGuia Atacado page."""
 import sys, urllib.request
 from html.parser import HTMLParser
 URL="https://akinoguia.com.br/cotacoes/agropecuarias/atacado"
@@ -22,10 +22,12 @@ def main():
  except Exception as e:
   print("RESULT: FAILED");print("ERROR:",repr(e));sys.exit(1)
  p=P();p.feed(html)
- hits=[row for row in p.rows if any("boi casado capao" in c.lower() for c in row)]
- if not hits:
-  print("RESULT: NOT FOUND");print("Rows parsed:",len(p.rows));sys.exit(1)
- print("Matched row:", " | ".join(hits[0]))
- print("RESULT: SUCCESS (quote row found; verify date/price manually)")
- print("Read-only test; does not store or publish data.")
+ print("Rows parsed:",len(p.rows))
+ for i,row in enumerate(p.rows,1): print(f"ROW {i}: "+" | ".join(row))
+ candidates=[row for row in p.rows if any("boi" in c.lower() or "casado" in c.lower() for c in row)]
+ if candidates:
+  print("BEEF RELATED ROWS:")
+  for row in candidates: print(" | ".join(row))
+ print("RESULT: DIAGNOSTIC COMPLETE")
+ print("No data saved or published. Verify source terms before reuse.")
 if __name__=="__main__":main()
