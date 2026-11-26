@@ -284,6 +284,7 @@
     
     let trendChart = null;
     let compareChart = null;
+    let selectedCompareSeries = null;
     let brandAvgSpans = {};
     
     // 统一日期解析：将 "2026/1/5" 转换为 "2026-01-05" 字符串，便于排序和比较
@@ -710,8 +711,8 @@
             data: s.data,
             connectNulls: false,
             symbol: 'none',
-            lineStyle: { width: 1.5, opacity: 0.7, color: colorPalette[idx % colorPalette.length] },
-            emphasis: { scale: false }
+            lineStyle: { width: s.name === selectedCompareSeries ? 4 : 1.5, opacity: s.name === selectedCompareSeries ? 1 : 0.7, color: colorPalette[idx % colorPalette.length] },
+            emphasis: { scale: false, lineStyle: { width: s.name === selectedCompareSeries ? 4 : 2.5, opacity: 1 } }
         }));
         const chartDom = document.getElementById('compareChart');
         if (chartDom) {
@@ -727,16 +728,15 @@
                         if (!params || !params.length) return '';
                         const valid = params.filter(p => p.value !== null && p.value !== undefined);
                         const dateLabel = params[0].axisValueLabel || params[0].axisValue || '';
-                        const limit = 25;
-                        const rows = valid.slice(0, limit).map(p =>
-                            '<div style="display:flex;justify-content:space-between;gap:16px;"><span>' +
-                            p.seriesName + '</span><b>' + Number(p.value).toFixed(1) + ' 元/KG</b></div>'
-                        ).join('');
-                        const more = valid.length > limit
-                            ? '<div style="margin-top:6px;color:#8a98a8;">其余 ' + (valid.length-limit) + ' 个厂号未显示（共 ' + valid.length + ' 个有价格）</div>'
-                            : '';
-                        return '<div style="max-height:300px;overflow-y:auto;min-width:180px;"><b style="display:block;margin-bottom:6px;">' +
-                            dateLabel + '</b>' + rows + more + (valid.length===0 ? '当日暂无价格' : '') + '</div>';
+                        const rows = valid.map(p => {
+                            const isSelected = p.seriesName === selectedCompareSeries;
+                            return '<div style="display:flex;justify-content:space-between;gap:16px;' +
+                                (isSelected ? 'font-weight:700;color:#111;' : '') + '">' +
+                                (isSelected ? '★ ' : '') + p.seriesName + '<b>' +
+                                Number(p.value).toFixed(1) + ' 元/KG</b></div>';
+                        }).join('');
+                        return '<div style="min-width:180px;"><b style="display:block;margin-bottom:6px;">' +
+                            dateLabel + '</b>' + rows + (valid.length===0 ? '当日暂无价格' : '') + '</div>';
                     }
                 },
                 legend: { data: sampledSeries.map(s => s.name), top: 0, left: 'center', type: 'scroll', itemWidth: 20, itemHeight: 10 },
@@ -745,6 +745,15 @@
                 yAxis: { type: 'value', name: `价格 (元/KG)`, min: 'dataMin' },
                 series
             }, true);
+            if (!compareChart.__factoryClickBound) {
+                compareChart.on('click', params => {
+                    if (params && params.seriesName) {
+                        selectedCompareSeries = selectedCompareSeries === params.seriesName ? null : params.seriesName;
+                        updateCompareChart();
+                    }
+                });
+                compareChart.__factoryClickBound = true;
+            }
         }
     }
     
