@@ -53,7 +53,7 @@ def fetch_akinoguia_quote():
     quote_date = None
     for row in parser.rows:
         joined = " ".join(row)
-        match = re.search(r"(\\d{2}/\\d{2}/\\d{4})", joined)
+        match = re.search(r"(\d{2}/\d{2}/\d{4})", joined)
         if match and ("Atacado" in joined or "SP" in joined):
             quote_date = datetime.strptime(match.group(1), "%d/%m/%Y").date().isoformat()
             break
