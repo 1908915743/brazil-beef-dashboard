@@ -1,0 +1,17 @@
+name: Test AkinoGuia HTML Read
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Read AkinoGuia quote (read-only test)
+        run: python scripts/test_akinoguia_atacado.py
