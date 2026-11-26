@@ -5,6 +5,7 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from urllib.request import Request, urlopen
 
@@ -15,6 +16,57 @@ OUTPUT = ROOT / "wholesale_price.json"
 # Confirm permission/terms for automated business use before enabling scheduled calls.
 MOA_REPORT_API = os.getenv("MOA_WHOLESALE_API_URL", "").strip() or "https://pfsc.agri.cn/api/FarmDaily/list"
 MOA_PAGE_SIZE = 10
+
+
+
+
+class AkinoGuiaParser(HTMLParser):
+    """Parse the visible Atacado table without executing page scripts."""
+    def __init__(self):
+        super().__init__()
+        self.rows, self.row, self.cell, self.in_cell = [], [], "", False
+    def handle_starttag(self, tag, attrs):
+        if tag == "tr":
+            self.row = []
+        elif tag in ("td", "th"):
+            self.cell, self.in_cell = "", True
+    def handle_endtag(self, tag):
+        if tag in ("td", "th") and self.in_cell:
+            self.row.append(self.cell.strip())
+            self.in_cell = False
+        elif tag == "tr" and self.row:
+            self.rows.append(self.row)
+    def handle_data(self, data):
+        if self.in_cell:
+            self.cell += data
+
+
+def fetch_akinoguia_quote():
+    url = "https://akinoguia.com.br/cotacoes/agropecuarias/atacado"
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; beef-price-dashboard/1.0)"})
+    with urlopen(request, timeout=25) as response:
+        if response.status != 200:
+            raise ValueError(f"AkinoGuia returned HTTP {response.status}")
+        html = response.read().decode("utf-8", errors="replace")
+    parser = AkinoGuiaParser()
+    parser.feed(html)
+    quote_date = None
+    for row in parser.rows:
+        joined = " ".join(row)
+        match = re.search(r"(\\d{2}/\\d{2}/\\d{4})", joined)
+        if match and ("Atacado" in joined or "SP" in joined):
+            quote_date = datetime.strptime(match.group(1), "%d/%m/%Y").date().isoformat()
+            break
+    target = next((row for row in parser.rows if any("boi casado capão" in cell.lower() for cell in row)), None)
+    if not target or len(target) < 2:
+        raise ValueError("AkinoGuia target quote row was not found")
+    price_text = target[1].replace(".", "").replace(",", ".")
+    value = float(price_text)
+    if not quote_date:
+        raise ValueError("AkinoGuia quote date was not found")
+    status = target[2] if len(target) > 2 else ""
+    return {"value": value, "quote_date": quote_date, "status": status}
+
 
 
 def extract_beef_price(report):
@@ -151,23 +203,36 @@ def main():
         print(f"china_beef_wholesale failed: {type(exc).__name__}: {exc}")
     items = [china]
 
-    # Scot remains independently disabled until an authorized feed is supplied.
-    scot = dict(previous.get("brazil_carcaca_casada", {}))
-    scot.update({
+    # AkinoGuia public page: read only the specific quote row and page date.
+    brazil = dict(previous.get("brazil_carcaca_casada", {}))
+    brazil.update({
         "id": "brazil_carcaca_casada",
-        "name": "Carcaça Casada（牛胴体批发价）",
+        "name": "Boi casado capão（阉牛整胴体批发价）",
         "unit": "R$/kg",
-        "source_name": "Scot Consultoria",
-        "source_url": "https://www.scotconsultoria.com.br/cotacoes/",
+        "source_name": "AkinoGuia（页面标注来源 Scot Consultoria）",
+        "source_url": "https://akinoguia.com.br/cotacoes/agropecuarias/atacado",
     })
-    if not os.getenv("SCOT_CARCACA_API_URL", "").strip():
-        scot.setdefault("value", None)
-        scot.setdefault("quote_date", None)
-        scot["status"] = "待取得Scot授权及数据接口"
-    else:
-        # The Scot adapter needs its provider's actual authorized response schema.
-        scot["status"] = "已配置接口，待适配并验证数据格式"
-    items.append(scot)
+    try:
+        quote = fetch_akinoguia_quote()
+        previous_brazil_value = brazil.get("value")
+        previous_brazil_date = brazil.get("quote_date")
+        brazil.update({
+            "value": quote["value"],
+            "quote_date": quote["quote_date"],
+            "change_value": None,
+            "change_pct": None,
+            "change_direction": "flat" if quote["status"].lower() in ("estável", "stable") else None,
+            "status": "已更新" if quote["status"].lower() in ("estável", "stable") else "已更新（涨跌未核实）",
+            "page_status": quote["status"],
+            "previous_value": previous_brazil_value,
+            "previous_quote_date": previous_brazil_date,
+        })
+        print(f'brazil_carcaca_casada: {quote["value"]} R$/kg ({quote["quote_date"]}); page status: {quote["status"]}')
+    except Exception as exc:
+        brazil["status"] = "更新失败，保留上次有效数据"
+        failures.append("brazil_carcaca_casada")
+        print(f"brazil_carcaca_casada failed: {type(exc).__name__}: {exc}")
+    items.append(brazil)
 
     result = {
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
